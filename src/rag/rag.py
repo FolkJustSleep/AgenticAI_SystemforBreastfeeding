@@ -12,9 +12,6 @@ def askllm(user_messages: str, collection):
     print(f"User message: {user_messages}")
     # PROMPT_CONTEXT = ""
     results = query_chuncks(user_messages, collection)   
-    # for doc in results['documents']:
-    #     PROMPT_CONTEXT += f"{doc}\n"
-    # print(f"Retrieved context: {PROMPT_CONTEXT}")
     PROMPT_CONTEXT = results['documents']
     messages = [
         (
