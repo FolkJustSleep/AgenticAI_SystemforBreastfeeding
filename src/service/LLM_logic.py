@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from unittest import result
 from langchain_ollama import ChatOllama
@@ -5,6 +6,7 @@ from langchain.tools import tool
 from langchain.messages import AIMessage
 from langchain.agents import create_agent
 from src.rag.rag import askllm
+from src.service.schedule_manage import DEFAULT_SLOT_MINUTES, book_doctor_appointment
 if __name__ != "__main__":
     from src.service.AskLLM import generate_answer
 
@@ -31,9 +33,27 @@ def answer_medical_question(user_question: str) -> str:
 
 
 @tool
-def doctor_appointment(date: str, departments: str) -> str:
-    '''Schedule a doctor appointment on the given date.'''
-    return f"Doctor appointment scheduled for {date} in department {departments}."
+def doctor_appointment(doctor_name: str,
+	patient_name: str,
+	requested_start: datetime,
+	duration_minutes: int = DEFAULT_SLOT_MINUTES,
+) -> str:
+    """
+	Book an appointment if the slot is free; otherwise return alternatives.
+    Args:
+        doctor_name (str): The name of the doctor.
+        patient_name (str): The name of the patient.
+        requested_start (datetime): The requested start time for the appointment Should be a datetime object like "Year-Month-Day Hour:Minute".
+        duration_minutes (int, optional): The duration of the appointment in minutes. Defaults to DEFAULT_SLOT_MINUTES.
+    Returns:
+        str: A message indicating whether the appointment was booked or if alternatives are provided.
+	"""
+    try:
+        print(f"Tool received appointment request: doctor={doctor_name}, patient={patient_name}, start={requested_start}, duration={duration_minutes} minutes")
+        result = book_doctor_appointment(doctor_name, patient_name, requested_start, duration_minutes)
+        return result
+    except Exception as e:        
+        return f"Error: {str(e)}"
 
 Agents_llm = ChatOllama(model="llama3.2:3b", baseurl=LLM_HOST).bind_tools([answer_medical_question, doctor_appointment])
 
@@ -66,7 +86,12 @@ def AgentsicAI(user_question: str) -> tuple[str, Exception]:
                     return tool_result, None
                 elif tool_name == "doctor_appointment":
                     print("Calling doctor_appointment tool...")
-                    tool_result = doctor_appointment(tool_call['args']['date'], tool_call['args']['departments'])
+                    tool_result = book_doctor_appointment(
+                        doctor_name=tool_call['args']['doctor_name'],
+                        patient_name=tool_call['args']['patient_name'],
+                        requested_start=tool_call['args']['requested_start']
+                    )
+                    print(f"Tool Result: {tool_result}")
                     return tool_result, None
     except Exception as e:
         print(f"Error during LLM invocation: {e}")

@@ -40,40 +40,90 @@ def _available_slots(day: datetime.date, booked: Iterable[Tuple[datetime, dateti
 	return free
 
 
+def _lookup_doctor_id(cur, doctor_name: str) -> Tuple[int | None, str | None]:
+	"""Resolve doctor_id from doctor name; return (id, error_message)."""
+
+	cur.execute(
+		"""
+		SELECT id
+		FROM doctors
+		WHERE name ILIKE %s
+		ORDER BY id
+		""",
+		(doctor_name,),
+	)
+	rows = cur.fetchall()
+	if not rows:
+		return None, f"Doctor '{doctor_name}' not found."
+	if len(rows) > 1:
+		return None, f"Multiple doctors match '{doctor_name}'. Please specify."
+	return rows[0][0], None
+
+
+def _to_naive(dt: datetime) -> datetime:
+	"""Strip timezone info so comparisons remain offset-naive."""
+
+	return dt.replace(tzinfo=None) if dt.tzinfo else dt
+
+
+def _normalize_requested_start(requested_start: datetime | str) -> Tuple[datetime | None, str | None]:
+	"""Accept datetime or 'dd-mm-YYYY HH:MM' string; return naive datetime or error."""
+
+	if isinstance(requested_start, str):
+		try:
+			parsed = datetime.strptime(requested_start, "%d-%m-%Y %H:%M")
+		except ValueError:
+			return None, "Requested start time format must be 'dd-mm-YYYY HH:MM'."
+		return parsed, None
+
+	if isinstance(requested_start, datetime):
+		return _to_naive(requested_start), None
+
+	return None, "Requested start time must be a datetime or a string."
+
+
 def book_doctor_appointment(
-	doctor_id: int,
+	doctor_name: str,
 	patient_name: str,
-	requested_start: datetime,
+	requested_start: datetime | str,
 	duration_minutes: int = DEFAULT_SLOT_MINUTES,
 ) -> str:
 	"""
 	Book an appointment if the slot is free; otherwise return alternatives.
 
 	Expected schema (adjust if your table differs):
+		doctors(id serial primary key, name text unique)
 		appointments(id serial primary key,
-					 doctor_id int not null,
-					 patient_name text,
-					 appointment_start timestamp,
-					 appointment_end timestamp,
-					 status text default 'booked')
+				 doctor_id int not null references doctors(id),
+				 patient_name text,
+				 appointment_start timestamp,
+				 appointment_end timestamp,
+				 status text default 'booked')
 	"""
-
+	requested_started, normalize_err = _normalize_requested_start(requested_start)
+	if normalize_err:
+		return normalize_err
+	requested_started = _to_naive(requested_started)
 	conn = get_connection()
 	if not conn:
 		return "Unable to connect to the schedule database."
 
-	day = requested_start.date()
+	day = requested_started.date()
 	block = timedelta(minutes=duration_minutes)
-	requested_end = requested_start + block
+	requested_end = requested_started + block
 
 	allowed_starts = {datetime.combine(day, slot) for slot in SLOT_START_TIMES}
-	if requested_start not in allowed_starts:
+	if requested_started not in allowed_starts:
 		allowed_str = ", ".join(t.strftime("%H:%M") for t in SLOT_START_TIMES)
 		return f"Requested time must match available slots: {allowed_str}."
 
 	try:
 		with conn:
 			with conn.cursor() as cur:
+				doctor_id, lookup_err = _lookup_doctor_id(cur, doctor_name)
+				if lookup_err:
+					return lookup_err
+
 				cur.execute(
 					"""
 					SELECT appointment_start, appointment_end
@@ -84,10 +134,10 @@ def book_doctor_appointment(
 					""",
 					(doctor_id, day),
 				)
-				booked = [(row[0], row[1]) for row in cur.fetchall()]
+				booked = [(_to_naive(row[0]), _to_naive(row[1])) for row in cur.fetchall()]
 
 				conflict = any(
-					not (requested_end <= start or requested_start >= end)
+					not (requested_end <= start or requested_started >= end)
 					for start, end in booked
 				)
 
@@ -98,12 +148,12 @@ def book_doctor_appointment(
 						VALUES (%s, %s, %s, %s, 'booked')
 						RETURNING id
 						""",
-						(doctor_id, patient_name, requested_start, requested_end),
+						(doctor_id, patient_name, requested_started, requested_end),
 					)
 					appt_id = cur.fetchone()[0]
 					return (
 						f"Appointment confirmed with doctor {doctor_id} "
-						f"on {requested_start.strftime('%Y-%m-%d %H:%M')} (ref #{appt_id})."
+						f"on {requested_started.strftime('%Y-%m-%d %H:%M')} (ref #{appt_id})."
 					)
 
 				free_slots = _available_slots(day, booked, duration_minutes)
