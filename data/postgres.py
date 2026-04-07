@@ -21,7 +21,7 @@ load_dotenv()
 def get_connection() -> psycopg2.extensions.connection | bool:
     try:
         return psycopg2.connect(
-            os.getenv("PSQL_INTERNAL_URL")
+            f"{os.getenv("PSQL_INTERNAL_URL")}"
         )
     except Exception as e:
         print(f"Error connecting to PostgreSQL: {e}")

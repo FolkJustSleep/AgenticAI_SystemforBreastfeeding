@@ -12,7 +12,9 @@ from src.service.schedule_manage import DEFAULT_SLOT_MINUTES, book_doctor_appoin
 if __name__ != "__main__":
     from src.service.AskLLM import generate_answer
 
-LLM_HOST = os.getenv("OLLAMA_HOST")
+# LLM_HOST = os.getenv("OLLAMA_HOST")
+LLM_HOST = os.getenv("OLLAMA_HOST_API")
+LLM_API_KEY = os.getenv("OLLAMA_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -59,7 +61,7 @@ def doctor_appointment(doctor_name: str,
     except Exception as e:        
         return f"Error: {str(e)}"
 
-Agents_llm = ChatOllama(model="llama3.2:3b", baseurl=LLM_HOST).bind_tools([answer_medical_question, doctor_appointment])
+Agents_llm = ChatOllama(model="llama3.2:3b", baseurl=LLM_HOST, apikey=LLM_API_KEY).bind_tools([answer_medical_question, doctor_appointment])
 
 def AgentsicAI(user_question: str) -> tuple[str, Exception]:
     response = GEMINI.models.generate_content(
