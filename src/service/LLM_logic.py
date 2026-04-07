@@ -45,9 +45,9 @@ def doctor_appointment(doctor_name: str,
     """
 	Book an appointment if the slot is free; otherwise return alternatives.
     Args:
-        doctor_name (str): The name of the doctor.
+        doctor_name (str): The name of the doctor not include Dr. just the name.
         patient_name (str): The name of the patient.
-        requested_start (datetime): The requested start time for the appointment Should be a datetime object like "Year-Month-Day Hour:Minute".
+        requested_start (datetime/str): The requested start time for the appointment Should be a datetime object like "dd-mm-yyyy Hour:Minute (00:00)".
         duration_minutes (int, optional): The duration of the appointment in minutes. Defaults to DEFAULT_SLOT_MINUTES.
     Returns:
         str: A message indicating whether the appointment was booked or if alternatives are provided.
