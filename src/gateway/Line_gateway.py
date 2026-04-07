@@ -17,10 +17,5 @@ def Handle_line_webhook(event: dict) -> tuple[str, Exception]:
                     reply_message(reply_token, f"Error: {str(err)}")
                     return None, err
                 else:
-                    translated_back, err = translate_to_thai(AgentsicAI_response)
-                    if err is not None:
-                        reply_message(reply_token, f"Error during translation back to Thai: {str(err)}")
-                        return None, err
-                    else:
-                        reply_message(reply_token, translated_back)
-                        return translated_back, None
+                    reply_message(reply_token, AgentsicAI_response)
+                    return AgentsicAI_response, None

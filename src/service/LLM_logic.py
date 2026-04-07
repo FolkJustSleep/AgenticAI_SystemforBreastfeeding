@@ -1,6 +1,8 @@
 from datetime import datetime
 import os
 from unittest import result
+from dotenv import load_dotenv
+from google import genai
 from langchain_ollama import ChatOllama
 from langchain.tools import tool
 from langchain.messages import AIMessage
@@ -11,6 +13,8 @@ if __name__ != "__main__":
     from src.service.AskLLM import generate_answer
 
 LLM_HOST = os.getenv("OLLAMA_HOST")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI = genai.Client(api_key=GEMINI_API_KEY)
 
 @tool
 def answer_medical_question(user_question: str) -> str:
@@ -41,9 +45,9 @@ def doctor_appointment(doctor_name: str,
     """
 	Book an appointment if the slot is free; otherwise return alternatives.
     Args:
-        doctor_name (str): The name of the doctor.
+        doctor_name (str): The name of the doctor not include Dr. just the name.
         patient_name (str): The name of the patient.
-        requested_start (datetime): The requested start time for the appointment Should be a datetime object like "Year-Month-Day Hour:Minute".
+        requested_start (datetime/str): The requested start time for the appointment Should be a datetime object like "dd-mm-yyyy Hour:Minute (00:00)".
         duration_minutes (int, optional): The duration of the appointment in minutes. Defaults to DEFAULT_SLOT_MINUTES.
     Returns:
         str: A message indicating whether the appointment was booked or if alternatives are provided.
@@ -58,14 +62,19 @@ def doctor_appointment(doctor_name: str,
 Agents_llm = ChatOllama(model="llama3.2:3b", baseurl=LLM_HOST).bind_tools([answer_medical_question, doctor_appointment])
 
 def AgentsicAI(user_question: str) -> tuple[str, Exception]:
+    response = GEMINI.models.generate_content(
+        model="gemini-3.1-flash-lite-preview",
+        contents=f"Translate the following sentence from Thai to English Just translate and don't add anything else:\n{user_question}")
+    translated_user_question = response.text
+    print(f"Translated user question: {translated_user_question}")
     messages = [
         (
             "system",
             "You are a helpful assistant that answer the user questions. Use the tool to answer the question if needed.",
         ),
-        ("human", user_question),
+        ("human", translated_user_question),
     ]
-    print(f"User question: {user_question}")
+    # print(f"User question: {user_question}")
     try :
         print("Invoking LLM with tools...")
         ai_msg = Agents_llm.invoke(messages)

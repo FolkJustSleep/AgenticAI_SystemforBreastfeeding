@@ -81,6 +81,7 @@ oauthlib
 ollama
 onnxruntime
 openai
+opencv-python
 opentelemetry-api
 opentelemetry-exporter-otlp-proto-common
 opentelemetry-exporter-otlp-proto-grpc
@@ -92,6 +93,9 @@ ormsgpack
 overrides
 packaging
 pandas
+pdf2img
+pdfminer.six
+pdfplumber
 pillow
 posthog
 propcache
@@ -107,8 +111,10 @@ pydantic-settings
 pydantic_core
 Pygments
 pypdf
+pypdfium2
 PyPika
 pyproject_hooks
+pytesseract
 python-dateutil
 python-dotenv
 python-multipart

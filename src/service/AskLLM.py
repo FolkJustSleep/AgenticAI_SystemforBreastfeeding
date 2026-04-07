@@ -19,7 +19,7 @@ def generate_answer(query: str, user_messages: str = "") -> tuple[str, Exception
             "system",
             f"""You are a helpful assistant that answer the user questions and translate them to Thai. Use the following context from the documents to provide accurate answers:\n
             This is the context you have retrieved from the documents:\n
-            {PROMPT_CONTEXT} """,
+            {PROMPT_CONTEXT} answer based on context but didn't tell the user about the context. Don't use "From the context we have, the answer is..." or "From the documents" or "Documents Sugggest" just answer the question based on the context and explain the context. if you don't know the answer, just say you don't know don't try to make up an answer.""",
         ),
         ("human", user_messages),
     ]
