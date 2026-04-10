@@ -1,12 +1,4 @@
 services:
-  ollama:
-    container_name: medllama_ollama
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ../../.ollama:/root/.ollama
-    restart: unless-stopped
   postgres:
     container_name: postgres
     image: postgres:latest
@@ -31,18 +23,6 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
-  # agenticai_app:
-  #   container_name: agenticai_app
-  #   depends_on:
-  #     - ollama
-  #     - postgresagenticai
-  #   build: .
-  #   ports:
-  #     - "8000:8000"
-  #   # volumes:
-  #   #   - ./data/chroma_db:/app/data/chroma_db
-  #   env_file:
-  #     - ./.env
-  #   restart: unless-stopped
+    
 volumes:
   postgres_data:

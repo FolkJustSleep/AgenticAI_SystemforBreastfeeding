@@ -61,7 +61,9 @@ def doctor_appointment(doctor_name: str,
     except Exception as e:        
         return f"Error: {str(e)}"
 
-Agents_llm = ChatOllama(model="llama3.2:3b", baseurl=LLM_HOST, apikey=LLM_API_KEY).bind_tools([answer_medical_question, doctor_appointment])
+Agents_llm = ChatOllama(model="llama3.2:3b", baseurl="https://ollama.com", apikey=LLM_API_KEY).bind_tools([answer_medical_question, doctor_appointment])
+# Agents_llm = ChatOllama(model="llama3.2:3b", apikey=LLM_API_KEY).bind_tools([answer_medical_question, doctor_appointment])
+
 
 def AgentsicAI(user_question: str) -> tuple[str, Exception]:
     response = GEMINI.models.generate_content(

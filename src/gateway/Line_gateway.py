@@ -1,6 +1,5 @@
 from src.service.Line_Chat import reply_message
 from src.service.LLM_logic import AgentsicAI
-from src.service.translate import translate_to_thai ,  translate_to_english
 
 def Handle_line_webhook(event: dict) -> tuple[str, Exception]:
     # print(f"Received LINE webhook event: {event}")
